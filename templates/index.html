@@ -13,8 +13,9 @@
   <ul id="chat"></ul>
 
   <script>
-    const ws = new WebSocket("ws://localhost:8080/ws");
+    const ws = new WebSocket("ws://" + location.host + "/ws");
 
+    
     ws.onmessage = (event) => {
       const url = event.data;
       const li = document.createElement("li");
@@ -58,3 +59,4 @@
   </script>
 </body>
 </html>
+

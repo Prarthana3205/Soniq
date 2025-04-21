@@ -37,5 +37,5 @@ func main() {
 	})
 
 	// Start the server
-	r.Run(":8080") // This will block the program until the server is closed
+	r.Run("0.0.0.0:8080") // This will block the program until the server is closed
 }
