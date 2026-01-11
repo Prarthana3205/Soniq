@@ -32,18 +32,13 @@ func HandleWebSocket(c *gin.Context) {
 		log.Println("WS client disconnected")
 	}()
 
-	// Read messages from this client → Redis
-	go func() {
-		for {
-			_, msg, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("WS read error:", err)
-				break
-			}
-			redis.PublishMessage(string(msg))
+	// Read messages from this client → Redis (blocking loop)
+	for {
+		_, msg, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("WS read error:", err)
+			break
 		}
-
-		conn.Close()
-		delete(Clients, conn)
-	}()
+		redis.PublishMessage(string(msg))
+	}
 }
