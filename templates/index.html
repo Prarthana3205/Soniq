@@ -142,50 +142,97 @@
 
     let mediaRecorder;
     let audioChunks = [];
+    let currentStream = null;
 
     async function startRecording() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-        console.log("Recording started");
+        audioChunks = []; // Reset chunks
+        currentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(currentStream);
 
         mediaRecorder.ondataavailable = event => {
-          audioChunks.push(event.data);
+          if (event.data && event.data.size > 0) {
+            audioChunks.push(event.data);
+            console.log("Data chunk received, size:", event.data.size);
+          }
         };
 
-        // Ensure upload runs when recording stops
         mediaRecorder.onstop = async () => {
-          const blob = new Blob(audioChunks, { type: 'audio/webm' });
-          const formData = new FormData();
-          formData.append("audio", blob, "voice.webm");
+          console.log("onstop fired, chunks:", audioChunks.length);
+          
+          // Stop all tracks to release microphone
+          if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+          }
 
-          const response = await fetch("/upload", {
-            method: "POST",
-            body: formData,
-          });
+          if (audioChunks.length === 0) {
+            console.error("No audio data recorded");
+            alert("No audio data was recorded. Please try again.");
+            return;
+          }
 
-          const data = await response.json();
+          try {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            console.log("Blob created, size:", blob.size);
+            
+            const formData = new FormData();
+            formData.append("audio", blob, "voice.webm");
 
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(data.url);
-          } else {
-            ws.addEventListener("open", () => ws.send(data.url), { once: true });
+            const response = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error("Upload failed: " + response.status);
+            }
+
+            const data = await response.json();
+            console.log("Upload success:", data.url);
+
+            // Add to local chat immediately
+            const li = document.createElement("li");
+            const audio = document.createElement("audio");
+            audio.src = data.url;
+            audio.controls = true;
+            li.appendChild(audio);
+            document.getElementById("chat").appendChild(li);
+
+            // Broadcast via WebSocket
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(data.url);
+            }
+          } catch (err) {
+            console.error("Upload error:", err);
+            alert("Failed to upload audio: " + err.message);
           }
 
           audioChunks = [];
         };
+
+        // Start recording with timeslice to ensure data is captured
+        mediaRecorder.start(100); // Capture data every 100ms
+        console.log("Recording started, state:", mediaRecorder.state);
+
       } catch (err) {
-        alert("Microphone blocked. HTTPS required for deployment.");
+        alert("Microphone access denied. Please allow microphone access.");
         console.error("getUserMedia error:", err);
       }
     }
 
     function stopRecording() {
-      if (!mediaRecorder || mediaRecorder.state !== 'recording') {
-        console.warn("Nothing to stop: not recording");
+      console.log("stopRecording called, state:", mediaRecorder ? mediaRecorder.state : "null");
+      
+      if (!mediaRecorder) {
+        alert("Please start recording first");
         return;
       }
+      
+      if (mediaRecorder.state === 'inactive') {
+        console.warn("Recording already stopped");
+        return;
+      }
+      
       mediaRecorder.stop();
       console.log("Recording stopped");
     }
