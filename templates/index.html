@@ -1,171 +1,194 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Soniq - Voice Chat</title>
-   <style>
-     body {
-       font-family: 'Arial', sans-serif;
-       background-color: #121212;
-       color: #fff;
-       margin: 0;
-       padding: 0;
-       display: flex;
-       flex-direction: column;
-       align-items: center;
-       justify-content: center;
-       height: 100vh;
-       text-align: center;
-       padding: 20px;
-     }
- 
-     h1 {
-       color: #1db954;
-       font-size: 48px;
-       margin-bottom: 10px;
-       font-weight: bold;
-     }
- 
-     h2 {
-       font-size: 24px;
-       color: #ccc;
-       margin-bottom: 30px;
-     }
- 
-     .description {
-       max-width: 700px;
-       margin-bottom: 40px;
-       font-size: 18px;
-       color: #bbb;
-     }
- 
-     .buttons {
-       margin-bottom: 30px;
-     }
- 
-     button {
-       background-color: #1db954;
-       border: none;
-       padding: 16px 32px;
-       font-size: 18px;
-       font-weight: bold;
-       color: white;
-       cursor: pointer;
-       margin: 10px;
-       border-radius: 50px;
-       transition: background-color 0.3s;
-       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-     }
- 
-     button:hover {
-       background-color: #1aa34a;
-     }
- 
-     #chat {
-       list-style-type: none;
-       padding: 0;
-       width: 80%;
-       max-width: 600px;
-       margin-top: 40px;
-     }
- 
-     #chat li {
-       background-color: #1e1e1e;
-       margin: 10px 0;
-       padding: 15px;
-       border-radius: 8px;
-       box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-     }
- 
-     audio {
-       width: 100%;
-       border-radius: 8px;
-     }
- 
-     .footer {
-       position: fixed;
-       bottom: 20px;
-       font-size: 14px;
-       color: #888;
-     }
- 
-     .footer a {
-       color: #1db954;
-       text-decoration: none;
-     }
-   </style>
- </head>
- <body>
- 
-   <h1>Soniq</h1>
-   <h2>Your Voice, Your Chat</h2>
- 
-   <div class="description">
-     <p>Welcome to Soniq, the ultimate voice chat platform that lets you send and receive live audio messages in real time. Whether you're having a conversation with friends, discussing ideas, or just sharing your voice, Soniq connects you instantly with crystal-clear sound. Let your voice do the talking!</p>
-   </div>
- 
-   <div class="buttons">
-     <button onclick="startRecording()">Start Recording</button>
-     <button onclick="stopRecording()">Stop & Send</button>
-   </div>
- 
-   <ul id="chat"></ul>
- 
-   <div class="footer">
-     <p>Powered by <a href="#">Soniq</a></p>
-   </div>
- 
-   <script>
-     const ws = new WebSocket("wss://" + location.host + "/ws");
- 
-     ws.onmessage = (event) => {
-       const url = event.data;
-       const li = document.createElement("li");
-       const audio = document.createElement("audio");
-       audio.src = url;
-       audio.controls = true;
-       li.appendChild(audio);
-       document.getElementById("chat").appendChild(li);
-     };
- 
-     let mediaRecorder;
-     let audioChunks = [];
- 
-     async function startRecording() {
-       try {
-         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-         mediaRecorder = new MediaRecorder(stream);
-         mediaRecorder.start();
- 
-         mediaRecorder.ondataavailable = event => {
-           audioChunks.push(event.data);
-         };
-       } catch (err) {
-         alert("Microphone access denied or not allowed on this device.\nTry using localhost or HTTPS.");
-         console.error("getUserMedia error:", err);
-       }
-     }
- 
-     function stopRecording() {
-       mediaRecorder.stop();
-       mediaRecorder.onstop = async () => {
-         const blob = new Blob(audioChunks, { type: 'audio/webm' });
-         const formData = new FormData();
-         formData.append("audio", blob, "voice.webm");
- 
-         const response = await fetch("/upload", {
-           method: "POST",
-           body: formData,
-         });
- 
-         const data = await response.json();
-         ws.send(data.url); // Send audio URL to all clients
-         audioChunks = [];
-       };
-     }
-   </script>
- 
- </body>
- </html>
- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soniq - Voice Chat</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #1db954;
+      font-size: 48px;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #ccc;
+      margin-bottom: 30px;
+    }
+
+    .description {
+      max-width: 700px;
+      margin-bottom: 40px;
+      font-size: 18px;
+      color: #bbb;
+    }
+
+    .buttons {
+      margin-bottom: 30px;
+    }
+
+    button {
+      background-color: #1db954;
+      border: none;
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      margin: 10px;
+      border-radius: 50px;
+      transition: background-color 0.3s;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    button:hover {
+      background-color: #1aa34a;
+    }
+
+    #chat {
+      list-style-type: none;
+      padding: 0;
+      width: 80%;
+      max-width: 600px;
+      margin-top: 40px;
+    }
+
+    #chat li {
+      background-color: #1e1e1e;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    audio {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 20px;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .footer a {
+      color: #1db954;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Soniq</h1>
+  <h2>Your Voice, Your Chat</h2>
+
+  <div class="description">
+    <p>
+      Welcome to Soniq, the ultimate voice chat platform that lets you send and
+      receive live audio messages in real time. Whether you're having a
+      conversation with friends, discussing ideas, or just sharing your voice,
+      Soniq connects you instantly with crystal-clear sound. Let your voice do
+      the talking!
+    </p>
+  </div>
+
+  <div class="buttons">
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop & Send</button>
+  </div>
+
+  <ul id="chat"></ul>
+
+  <div class="footer">
+    <p>Powered by <a href="#">Soniq</a></p>
+  </div>
+
+  <script>
+    const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${wsProtocol}//${location.host}/ws`);
+
+    ws.onopen = () => console.log("WebSocket connected");
+    ws.onerror = (err) => console.error("WebSocket error:", err);
+    ws.onclose = () => console.warn("WebSocket closed");
+
+    ws.onmessage = (event) => {
+      const url = event.data;
+      const li = document.createElement("li");
+      const audio = document.createElement("audio");
+      audio.src = url;
+      audio.controls = true;
+      li.appendChild(audio);
+      document.getElementById("chat").appendChild(li);
+    };
+
+    let mediaRecorder;
+    let audioChunks = [];
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        console.log("Recording started");
+
+        mediaRecorder.ondataavailable = event => {
+          audioChunks.push(event.data);
+        };
+
+        // Ensure upload runs when recording stops
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const formData = new FormData();
+          formData.append("audio", blob, "voice.webm");
+
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(data.url);
+          } else {
+            ws.addEventListener("open", () => ws.send(data.url), { once: true });
+          }
+
+          audioChunks = [];
+        };
+      } catch (err) {
+        alert("Microphone blocked. HTTPS required for deployment.");
+        console.error("getUserMedia error:", err);
+      }
+    }
+
+    function stopRecording() {
+      if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+        console.warn("Nothing to stop: not recording");
+        return;
+      }
+      mediaRecorder.stop();
+      console.log("Recording stopped");
+    }
+  </script>
+</body>
+</html>
