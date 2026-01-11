@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"soniq/internal/server"
 	"soniq/internal/server/handlers"
-	//"html/template"
 	"soniq/internal/server/redis"
+	"log"
 	"net/http"
 )
 
@@ -36,6 +36,9 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	// Start the server
-	r.Run("0.0.0.0:8080") // This will block the program until the server is closed
+	// Start the server with HTTPS
+	err := r.RunTLS("0.0.0.0:8080", "server.crt", "server.key") // Update with your actual certificate paths
+	if err != nil {
+		log.Fatal("Error starting server: ", err)
+	}
 }
