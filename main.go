@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"soniq/internal/server"
+	"soniq/internal/server/handlers"
 	"soniq/internal/server/redis"
 
 	"github.com/gin-gonic/gin"
