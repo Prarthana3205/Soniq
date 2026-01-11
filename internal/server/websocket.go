@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"net/http"
 	"soniq/internal/server/redis"
 
 	"github.com/gin-gonic/gin"
