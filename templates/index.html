@@ -190,15 +190,7 @@
             const data = await response.json();
             console.log("Upload success:", data.url);
 
-            // Add to local chat immediately
-            const li = document.createElement("li");
-            const audio = document.createElement("audio");
-            audio.src = data.url;
-            audio.controls = true;
-            li.appendChild(audio);
-            document.getElementById("chat").appendChild(li);
-
-            // Broadcast via WebSocket
+            // Broadcast via WebSocket (will be received by all clients including sender)
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(data.url);
             }
