@@ -12,6 +12,11 @@ import (
 )
 
 func main() {
+	// Ensure uploads directory exists
+	if err := os.MkdirAll("public/uploads", 0755); err != nil {
+		log.Println("Warning: Could not create uploads directory:", err)
+	}
+
 	// Initialize Redis
 	redis.InitRedis()
 

@@ -16,7 +16,19 @@ func InitRedis() {
 	addr := "localhost:6379"
 	password := ""
 
-	// Use Railway env vars if available
+	// Use Railway REDIS_URL if available (format: redis://default:password@host:port)
+	if redisURL := os.Getenv("REDIS_URL"); redisURL != "" {
+		opt, err := redis.ParseURL(redisURL)
+		if err != nil {
+			fmt.Println("Failed to parse REDIS_URL:", err)
+		} else {
+			rdb = redis.NewClient(opt)
+			fmt.Println("Redis connected via REDIS_URL")
+			return
+		}
+	}
+
+	// Fallback to REDIS_HOST env var
 	if os.Getenv("REDIS_HOST") != "" {
 		addr = os.Getenv("REDIS_HOST")
 		password = os.Getenv("REDIS_PASSWORD")
@@ -27,7 +39,7 @@ func InitRedis() {
 		Password: password,
 	})
 
-	// Optional: test connection
+	// Test connection
 	_, err := rdb.Ping(ctx).Result()
 	if err != nil {
 		fmt.Println("Redis connection error:", err)
